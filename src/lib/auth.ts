@@ -39,6 +39,13 @@ export async function startVkLogin(): Promise<string> {
   return data.url;
 }
 
+export type ClosedResult = {
+  closed: true;
+  pass: string;
+  already_in_waitlist: boolean;
+  user: { name: string; avatar: string | null };
+};
+
 export async function completeVkLogin(code: string, state: string, deviceId: string) {
   const res = await fetch(`${AUTH_URL}?action=callback`, {
     method: 'POST',
@@ -47,8 +54,20 @@ export async function completeVkLogin(code: string, state: string, deviceId: str
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'login_failed');
+  if (data.closed) return data as ClosedResult;
   setToken(data.token);
   return data;
+}
+
+export async function joinWaitlist(pass: string) {
+  const res = await fetch(`${AUTH_URL}?action=waitlist`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pass }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'waitlist_failed');
+  return data as { ok: true; total: number };
 }
 
 export async function fetchMe(): Promise<{

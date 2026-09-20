@@ -16,6 +16,7 @@ import Privacy from "./pages/Privacy";
 import Vault from "./pages/Vault";
 import Memory from "./pages/owner/Memory";
 import OwnerLog from "./pages/owner/OwnerLog";
+import Waitlist from "./pages/owner/Waitlist";
 import Stub from "./pages/owner/Stub";
 import NotFound from "./pages/NotFound";
 
@@ -64,6 +65,14 @@ const App = () => (
                 element={
                   <RequireOwner>
                     <OwnerLog />
+                  </RequireOwner>
+                }
+              />
+              <Route
+                path="/owner/waitlist"
+                element={
+                  <RequireOwner>
+                    <Waitlist />
                   </RequireOwner>
                 }
               />

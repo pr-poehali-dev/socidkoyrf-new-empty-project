@@ -67,6 +67,25 @@ export async function fetchOwnerLog(): Promise<OwnerLogEntry[]> {
   return data.entries ?? [];
 }
 
+export type WaitlistEntry = {
+  vk_id: string;
+  name: string | null;
+  avatar: string | null;
+  created_at: string;
+};
+
+export type WaitlistData = {
+  entries: WaitlistEntry[];
+  total: number;
+  attempts: number;
+};
+
+export async function fetchWaitlist(): Promise<WaitlistData> {
+  const res = await fetch(`${GUARD_URL}?action=waitlist`, { headers: headers() });
+  if (!res.ok) return { entries: [], total: 0, attempts: 0 };
+  return res.json();
+}
+
 export async function fetchMemory() {
   const res = await fetch(`${MEMORY_URL}?action=all`, { headers: headers() });
   if (!res.ok) throw new Error('forbidden');

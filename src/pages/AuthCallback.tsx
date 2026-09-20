@@ -2,14 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
-import { completeVkLogin } from '@/lib/auth';
+import { completeVkLogin, type ClosedResult } from '@/lib/auth';
 import { useAuth } from '@/contexts/AuthContext';
+import ComingSoon from '@/pages/ComingSoon';
 
 const AuthCallback = () => {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { refresh } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const [closed, setClosed] = useState<ClosedResult | null>(null);
   const started = useRef(false);
 
   useEffect(() => {
@@ -26,12 +28,26 @@ const AuthCallback = () => {
     }
 
     completeVkLogin(code, state, deviceId)
-      .then(async () => {
+      .then(async (data) => {
+        if (data.closed) {
+          setClosed(data as ClosedResult);
+          return;
+        }
         await refresh();
         navigate('/account', { replace: true });
       })
       .catch(() => setError('Не удалось завершить вход. Попробуйте ещё раз.'));
   }, [params, navigate, refresh]);
+
+  if (closed) {
+    return (
+      <ComingSoon
+        pass={closed.pass}
+        alreadyInWaitlist={closed.already_in_waitlist}
+        userName={closed.user?.name}
+      />
+    );
+  }
 
   if (error) {
     return (

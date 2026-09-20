@@ -226,6 +226,34 @@ def action_owner_log(event, conn):
     return respond(200, {'entries': rows})
 
 
+def action_waitlist(event, conn):
+    access = check_access(conn, auth_token(event))
+    if not access['is_owner']:
+        return respond(403, {'error': 'forbidden', 'reason': access['reason']})
+
+    with conn.cursor() as cur:
+        cur.execute(
+            f"SELECT provider_user_id, name, avatar_url, created_at "
+            f"FROM {SCHEMA}.waitlist ORDER BY created_at DESC LIMIT 500"
+        )
+        rows = [{
+            'vk_id': r[0],
+            'name': r[1],
+            'avatar': r[2],
+            'created_at': r[3].isoformat(),
+        } for r in cur.fetchall()]
+        cur.execute(f"SELECT count(*) FROM {SCHEMA}.waitlist")
+        total = cur.fetchone()[0]
+        cur.execute(
+            f"SELECT count(*) FROM {SCHEMA}.auth_log WHERE reason = 'service_closed'"
+        )
+        attempts = cur.fetchone()[0]
+        owner_log(cur, access['user']['id'], 'view_waitlist', 'waitlist',
+                  'Просмотр списка ожидания', client_ip(event), user_agent(event))
+    conn.commit()
+    return respond(200, {'entries': rows, 'total': total, 'attempts': attempts})
+
+
 def handler(event: dict, context) -> dict:
     """Второй вход и проверка прав владельца панели управления."""
     method = event.get('httpMethod', 'GET')
@@ -248,6 +276,8 @@ def handler(event: dict, context) -> dict:
             return action_drop(event, conn)
         if action == 'owner_log' and method == 'GET':
             return action_owner_log(event, conn)
+        if action == 'waitlist' and method == 'GET':
+            return action_waitlist(event, conn)
         return respond(404, {'error': 'unknown_action'})
     finally:
         conn.close()

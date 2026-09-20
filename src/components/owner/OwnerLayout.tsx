@@ -7,6 +7,7 @@ import { useGuard } from '@/contexts/GuardContext';
 
 const menu = [
   { to: '/owner/memory', label: 'Память', icon: 'BrainCircuit' },
+  { to: '/owner/waitlist', label: 'Список ожидания', icon: 'Bell' },
   { to: '/owner/users', label: 'Пользователи', icon: 'Users' },
   { to: '/owner/products', label: 'Товары', icon: 'Package' },
   { to: '/owner/log', label: 'Журнал', icon: 'ScrollText' },

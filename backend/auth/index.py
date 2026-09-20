@@ -14,6 +14,7 @@ SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 'public')
 SESSION_DAYS = 30
 STATE_TTL_MINUTES = 10
 POLICY_VERSION = '1.0'
+WAITLIST_PASS_MINUTES = 10
 
 CORS = {
     'Access-Control-Allow-Origin': '*',
@@ -206,6 +207,33 @@ def action_callback(event):
         name = ' '.join(filter(None, [vk_user.get('first_name'), vk_user.get('last_name')])).strip()
         avatar = vk_user.get('avatar') or None
 
+        owner_vk_id = (os.environ.get('OWNER_VK_ID') or '').strip()
+        launch_mode = (os.environ.get('LAUNCH_MODE') or 'closed').strip().lower()
+
+        if launch_mode != 'open' and vk_id != owner_vk_id:
+            pass_token = random_token()
+            pass_expires = now() + timedelta(minutes=WAITLIST_PASS_MINUTES)
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"INSERT INTO {SCHEMA}.waitlist_passes "
+                    f"(token_hash, provider, provider_user_id, name, avatar_url, expires_at) "
+                    f"VALUES ({q(sha256(pass_token))}, 'vk', {q(vk_id)}, "
+                    f"{q(name or 'Пользователь')}, {q(avatar)}, {q(pass_expires.isoformat())})"
+                )
+                cur.execute(
+                    f"SELECT 1 FROM {SCHEMA}.waitlist "
+                    f"WHERE provider = 'vk' AND provider_user_id = {q(vk_id)}"
+                )
+                already = cur.fetchone() is not None
+                write_log(cur, None, 'vk', 'login', False, 'service_closed', ip, ua)
+            conn.commit()
+            return respond(200, {
+                'closed': True,
+                'pass': pass_token,
+                'already_in_waitlist': already,
+                'user': {'name': name or 'Пользователь', 'avatar': avatar},
+            })
+
         with conn.cursor() as cur:
             cur.execute(
                 f"SELECT user_id FROM {SCHEMA}.user_identities "
@@ -373,6 +401,41 @@ def action_delete_account(event):
     return respond(200, {'ok': True})
 
 
+def action_waitlist_join(event):
+    body = json.loads(event.get('body') or '{}')
+    pass_token = (body.get('pass') or '').strip()
+    if not pass_token:
+        return respond(400, {'error': 'missing_pass'})
+
+    ip = client_ip(event)
+    ua = user_agent(event)
+    conn = db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"UPDATE {SCHEMA}.waitlist_passes SET used = TRUE "
+                f"WHERE token_hash = {q(sha256(pass_token))} AND used = FALSE "
+                f"AND expires_at > now() RETURNING provider_user_id, name, avatar_url"
+            )
+            row = cur.fetchone()
+            if not row:
+                conn.commit()
+                return respond(400, {'error': 'bad_pass'})
+            vk_id, name, avatar = row
+            cur.execute(
+                f"INSERT INTO {SCHEMA}.waitlist "
+                f"(provider, provider_user_id, name, avatar_url, ip, user_agent) "
+                f"VALUES ('vk', {q(vk_id)}, {q(name)}, {q(avatar)}, {q(ip)}, {q(ua)}) "
+                f"ON CONFLICT (provider, provider_user_id) DO NOTHING"
+            )
+            cur.execute(f"SELECT count(*) FROM {SCHEMA}.waitlist")
+            total = cur.fetchone()[0]
+        conn.commit()
+    finally:
+        conn.close()
+    return respond(200, {'ok': True, 'total': total})
+
+
 def handler(event: dict, context) -> dict:
     """Вход через ВКонтакте, проверка сессии, выход и удаление аккаунта."""
     method = event.get('httpMethod', 'GET')
@@ -394,5 +457,7 @@ def handler(event: dict, context) -> dict:
         return action_logout(event)
     if action == 'delete' and method == 'POST':
         return action_delete_account(event)
+    if action == 'waitlist' and method == 'POST':
+        return action_waitlist_join(event)
 
     return respond(404, {'error': 'unknown_action'})
