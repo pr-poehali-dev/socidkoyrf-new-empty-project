@@ -177,7 +177,10 @@ const Memory = () => {
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="font-medium">{String(item.title)}</h3>
                 <Badge className={statusTone(String(item.status))}>{String(item.status)}</Badge>
-                <span className="ml-auto text-xs text-slate-500">{String(item.date)}</span>
+                <span className="ml-auto text-xs text-slate-500">
+                  {String(item.date)}
+                  {item.time ? ` · ${String(item.time)}` : ''}
+                </span>
               </div>
               <p className="mt-2 text-sm text-slate-400">{String(item.details)}</p>
             </Card>
