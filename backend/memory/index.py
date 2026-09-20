@@ -17,14 +17,9 @@ CORS = {
 }
 
 SECTIONS = {
-    'instruction': 'Инструкция для Юры',
-    'vk_setup': 'Подключение ВК',
-    'done': 'Сделано',
+    'journal': 'Журнал',
     'plans': 'Планы',
-    'decisions': 'Решения',
     'blocks': 'Блоки',
-    'access': 'Доступы',
-    'issues': 'Проблемы',
     'glossary': 'Словарь',
 }
 
