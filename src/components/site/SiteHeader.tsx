@@ -14,7 +14,7 @@ const SiteHeader = () => {
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Icon name="Tag" size={18} />
           </span>
-          <span>Соскидкой.рф</span>
+          <span>СоСкидкой.РФ</span>
         </Link>
 
         <div className="ml-auto">
