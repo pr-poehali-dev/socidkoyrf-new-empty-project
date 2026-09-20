@@ -1,7 +1,7 @@
 import funcUrls from '../../backend/func2url.json';
 
 const AUTH_URL = funcUrls.auth;
-const TOKEN_KEY = 'session_token';
+export const TOKEN_KEY = 'session_token';
 
 export type User = {
   id: number;

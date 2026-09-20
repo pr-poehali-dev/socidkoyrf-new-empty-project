@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
-import { fetchMe, logout as apiLogout, User, SessionInfo, Identity } from '@/lib/auth';
+import { fetchMe, logout as apiLogout, TOKEN_KEY, User, SessionInfo, Identity } from '@/lib/auth';
 
 type AuthState = {
   user: User | null;
@@ -39,6 +39,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     refresh();
+  }, [refresh]);
+
+  useEffect(() => {
+    let lastCheck = Date.now();
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === TOKEN_KEY) {
+        lastCheck = Date.now();
+        refresh();
+      }
+    };
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (Date.now() - lastCheck < 30000) return;
+      lastCheck = Date.now();
+      refresh();
+    };
+    window.addEventListener('storage', onStorage);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [refresh]);
 
   return (
