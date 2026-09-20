@@ -18,6 +18,7 @@ import {
 import Icon from '@/components/ui/icon';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGuard } from '@/contexts/GuardContext';
 import { deleteAccount } from '@/lib/auth';
 
 const providerNames: Record<string, string> = {
@@ -45,6 +46,7 @@ const shortDevice = (ua: string) => {
 
 const Account = () => {
   const { user, sessions, identities, signOut } = useAuth();
+  const { owner_candidate } = useGuard();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
 
@@ -80,6 +82,16 @@ const Account = () => {
           </div>
         </CardContent>
       </Card>
+
+      {owner_candidate && (
+        <Button
+          className="h-12 w-full bg-slate-900 text-white hover:bg-slate-800"
+          onClick={() => navigate('/owner/memory')}
+        >
+          <Icon name="Command" className="mr-2" size={18} />
+          Пространство
+        </Button>
+      )}
 
       <Card>
         <CardHeader>

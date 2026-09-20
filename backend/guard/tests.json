@@ -1,0 +1,53 @@
+{
+  "tests": [
+    {
+      "name": "Health check",
+      "method": "GET",
+      "path": "/?action=health",
+      "expectedStatus": 200,
+      "expectedBody": {"status": "ok"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Без первого входа статус закрыт",
+      "method": "GET",
+      "path": "/?action=status",
+      "expectedStatus": 401,
+      "expectedBody": {"authenticated": false},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Второй вход без первого невозможен",
+      "method": "POST",
+      "path": "/?action=elevate",
+      "body": {},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "not_authenticated"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Журнал владельца закрыт для чужих",
+      "method": "GET",
+      "path": "/?action=owner_log",
+      "expectedStatus": 403,
+      "expectedBody": {"error": "forbidden"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Сброс второго входа без первого отклоняется",
+      "method": "POST",
+      "path": "/?action=drop",
+      "body": {},
+      "expectedStatus": 401,
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Неизвестное действие",
+      "method": "GET",
+      "path": "/?action=nonsense",
+      "expectedStatus": 404,
+      "expectedBody": {"error": "unknown_action"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
