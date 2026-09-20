@@ -26,7 +26,11 @@ CORS = {
 def q(value):
     if value is None:
         return 'NULL'
-    return adapt(value).getquoted().decode('utf-8')
+    if isinstance(value, bool):
+        return 'TRUE' if value else 'FALSE'
+    if isinstance(value, (int, float)):
+        return str(value)
+    return "'" + str(value).replace("\\", "\\\\").replace("'", "''") + "'"
 
 
 def db():
