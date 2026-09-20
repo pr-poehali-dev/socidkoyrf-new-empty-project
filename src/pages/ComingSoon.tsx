@@ -57,14 +57,19 @@ const ComingSoon = ({ pass, alreadyInWaitlist, userName }: Props) => {
               <span className="font-medium">Вы в списке — сообщим о запуске</span>
             </div>
           ) : (
-            <Button onClick={handleJoin} disabled={busy} className="h-12 w-full text-base">
-              {busy ? (
-                <Icon name="Loader2" className="mr-2 animate-spin" size={20} />
-              ) : (
-                <Icon name="Bell" className="mr-2" size={20} />
-              )}
-              Сообщить мне о запуске
-            </Button>
+            <>
+              <p className="text-sm text-muted-foreground">
+                Хотите узнать о запуске первым? Нажмите кнопку — и мы сообщим
+              </p>
+              <Button onClick={handleJoin} disabled={busy} className="h-12 w-full text-base">
+                {busy ? (
+                  <Icon name="Loader2" className="mr-2 animate-spin" size={20} />
+                ) : (
+                  <Icon name="Bell" className="mr-2" size={20} />
+                )}
+                Сообщить мне о запуске
+              </Button>
+            </>
           )}
 
           <Button asChild variant="ghost" className="w-full">
