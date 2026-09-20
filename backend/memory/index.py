@@ -15,6 +15,8 @@ CORS = {
 }
 
 SECTIONS = {
+    'instruction': 'Инструкция для Юры',
+    'vk_setup': 'Подключение ВК',
     'done': 'Сделано',
     'plans': 'Планы',
     'decisions': 'Решения',

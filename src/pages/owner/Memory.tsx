@@ -9,7 +9,17 @@ import { fetchMemory } from '@/lib/guard';
 type Item = Record<string, unknown>;
 type Section = { title: string; description?: string; items?: Item[]; [k: string]: unknown };
 
-const order = ['done', 'plans', 'decisions', 'blocks', 'access', 'issues', 'glossary'];
+const order = [
+  'instruction',
+  'vk_setup',
+  'done',
+  'plans',
+  'decisions',
+  'blocks',
+  'access',
+  'issues',
+  'glossary',
+];
 
 const statusTone = (value: string) => {
   const v = value.toLowerCase();
@@ -69,14 +79,97 @@ const Memory = () => {
         <p className="text-sm text-slate-500">Вся история, планы и решения в одном месте</p>
       </div>
 
-      <Tabs defaultValue="done">
+      <Tabs defaultValue="instruction">
         <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 bg-slate-900">
-          {order.map((key) => (
-            <TabsTrigger key={key} value={key} className="data-[state=active]:bg-slate-800">
-              {titles[key] ?? key}
-            </TabsTrigger>
-          ))}
+          {order.map((key) => {
+            const isGuide = key === 'instruction' || key === 'vk_setup';
+            return (
+              <TabsTrigger
+                key={key}
+                value={key}
+                className={`data-[state=active]:bg-slate-800 ${
+                  isGuide ? 'text-amber-400/90 data-[state=active]:text-amber-300' : ''
+                }`}
+              >
+                {isGuide && <Icon name="BookOpen" className="mr-1.5" size={14} />}
+                {titles[key] ?? key}
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
+
+        <TabsContent value="instruction" className="mt-4 space-y-3">
+          {(data.instruction?.intro as string[] | undefined)?.map((p, i) => (
+            <p key={i} className="text-sm leading-relaxed text-slate-400">
+              {p}
+            </p>
+          ))}
+          <div className="space-y-2">
+            {(data.instruction?.sections as Item[] | undefined)?.map((s, i) => (
+              <Card key={i}>
+                <h3 className="font-medium">{String(s.tab)}</h3>
+                <p className="mt-1 text-sm text-slate-400">{String(s.purpose)}</p>
+                <p className="mt-2 text-xs text-slate-500">Кто пишет: {String(s.who_writes)}</p>
+              </Card>
+            ))}
+          </div>
+          <Card>
+            <h3 className="font-medium">Правила записи</h3>
+            <ol className="mt-2 space-y-1.5 text-sm text-slate-400">
+              {(data.instruction?.rules as string[] | undefined)?.map((r, i) => (
+                <li key={i}>
+                  {i + 1}. {r}
+                </li>
+              ))}
+            </ol>
+          </Card>
+          <Card>
+            <h3 className="font-medium">Что можно сказать Юре</h3>
+            <ul className="mt-2 space-y-1.5 text-sm text-slate-400">
+              {(data.instruction?.how_to_use as string[] | undefined)?.map((h, i) => (
+                <li key={i}>· {h}</li>
+              ))}
+            </ul>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="vk_setup" className="mt-4 space-y-3">
+          <Card>
+            <div className="flex items-center gap-2">
+              <Icon name="TriangleAlert" className="text-amber-400" size={16} />
+              <h3 className="font-medium">Важно знать до начала</h3>
+            </div>
+            <ul className="mt-2 space-y-1.5 text-sm text-slate-400">
+              {(data.vk_setup?.important as string[] | undefined)?.map((t, i) => (
+                <li key={i}>· {t}</li>
+              ))}
+            </ul>
+          </Card>
+          {(data.vk_setup?.steps as Item[] | undefined)?.map((s, i) => (
+            <Card key={i}>
+              <div className="flex items-start gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs text-slate-300">
+                  {String(s.step)}
+                </span>
+                <div className="min-w-0">
+                  <h3 className="font-medium">{String(s.title)}</h3>
+                  <p className="mt-1 break-words text-sm text-slate-400">{String(s.details)}</p>
+                </div>
+              </div>
+            </Card>
+          ))}
+          <Card>
+            <h3 className="font-medium">Если что-то пошло не так</h3>
+            <div className="mt-3 space-y-3">
+              {(data.vk_setup?.troubleshooting as Item[] | undefined)?.map((t, i) => (
+                <div key={i}>
+                  <p className="text-sm text-slate-300">{String(t.problem)}</p>
+                  <p className="mt-0.5 text-sm text-slate-500">{String(t.reason)}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="done" className="mt-4 space-y-3">
           {(data.done?.items ?? []).map((item, i) => (
