@@ -1,0 +1,45 @@
+{
+  "tests": [
+    {
+      "name": "Health check",
+      "method": "GET",
+      "path": "/?action=health",
+      "expectedStatus": 200,
+      "expectedBody": {"status": "ok"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Профиль без токена отклоняется",
+      "method": "GET",
+      "path": "/?action=me",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "unauthorized"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Возврат без кода отклоняется",
+      "method": "POST",
+      "path": "/?action=callback",
+      "body": {},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "missing_code"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Возврат с подложной меткой отклоняется",
+      "method": "POST",
+      "path": "/?action=callback",
+      "body": {"code": "fake", "state": "not-a-real-state"},
+      "expectedStatus": 400,
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Неизвестное действие",
+      "method": "GET",
+      "path": "/?action=nonsense",
+      "expectedStatus": 404,
+      "expectedBody": {"error": "unknown_action"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
