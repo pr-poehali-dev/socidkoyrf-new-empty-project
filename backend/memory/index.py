@@ -5,6 +5,8 @@ import hashlib
 import psycopg2
 from psycopg2.extensions import adapt
 
+from content import CONTENT
+
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 'public')
 
 CORS = {
@@ -121,11 +123,7 @@ def owner_log(conn, user_id, action, target, details, ip, ua):
 
 
 def read_section(name):
-    path = os.path.join(MEMORY_DIR, f'{name}.json')
-    if not os.path.exists(path):
-        return {'title': SECTIONS.get(name, name), 'items': []}
-    with open(path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    return CONTENT.get(name) or {'title': SECTIONS.get(name, name), 'items': []}
 
 
 def handler(event: dict, context) -> dict:
@@ -138,7 +136,11 @@ def handler(event: dict, context) -> dict:
     action = params.get('action') or 'all'
 
     if action == 'health':
-        return respond(200, {'status': 'ok', 'sections': list(SECTIONS.keys())})
+        return respond(200, {
+            'status': 'ok',
+            'sections': list(SECTIONS.keys()),
+            'loaded': sorted(CONTENT.keys()),
+        })
 
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     try:
