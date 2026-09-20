@@ -70,7 +70,7 @@ const App = () => (
                 }
               />
               <Route
-                path="/__preview-closed"
+                path="/demo"
                 element={
                   <ComingSoon pass="" alreadyInWaitlist={false} userName="Иван" />
                 }
