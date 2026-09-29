@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import OwnerLayout from '@/components/owner/OwnerLayout';
 import JournalInstruction from '@/components/owner/JournalInstruction';
@@ -195,23 +196,64 @@ const Memory = () => {
           ))}
         </TabsContent>
 
-        <TabsContent value="blocks" className="mt-4 space-y-3">
-          {((data.blocks?.items ?? []) as Item[]).map((item, i) => (
-            <Card key={i}>
-              <h3 className="font-medium">{String(item.name)}</h3>
-              <p className="mt-1 text-sm text-slate-400">{String(item.details)}</p>
-              <p className="mt-2 text-xs text-slate-500">Где: {String(item.used)}</p>
-            </Card>
-          ))}
-          {Array.isArray(data.blocks?.planned) && (
-            <Card>
-              <h3 className="font-medium">Запланированные блоки</h3>
-              <ul className="mt-2 space-y-1 text-sm text-slate-400">
-                {(data.blocks.planned as string[]).map((b) => (
-                  <li key={b}>· {b}</li>
+        <TabsContent value="blocks" className="mt-4 space-y-5">
+          {data.blocks?.description ? (
+            <p className="text-sm text-slate-500">{String(data.blocks.description)}</p>
+          ) : null}
+
+          {((data.blocks?.groups ?? []) as Item[]).map((group, gi) => (
+            <div key={gi}>
+              <div className="mb-2">
+                <h2 className="font-medium">
+                  {String(group.title)}
+                  <span className="ml-2 text-xs font-normal text-slate-500">
+                    {((group.items ?? []) as Item[]).length}
+                  </span>
+                </h2>
+                {group.note ? (
+                  <p className="text-xs text-slate-500">{String(group.note)}</p>
+                ) : null}
+              </div>
+              <div className="space-y-2">
+                {((group.items ?? []) as Item[]).map((item, i) => (
+                  <Card key={i}>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-medium">{String(item.name)}</h3>
+                      {item.data && item.data !== '—' ? (
+                        <Badge
+                          className={
+                            item.data === 'общие'
+                              ? 'bg-sky-500/15 text-sky-400'
+                              : 'bg-violet-500/15 text-violet-400'
+                          }
+                        >
+                          {String(item.data)} данные
+                        </Badge>
+                      ) : null}
+                      <span className="ml-auto text-xs text-slate-500">
+                        {String(item.used)}
+                      </span>
+                    </div>
+                    <p className="mt-1.5 text-sm leading-relaxed text-slate-400">
+                      {String(item.details)}
+                    </p>
+                  </Card>
                 ))}
-              </ul>
-            </Card>
+              </div>
+            </div>
+          ))}
+
+          {Array.isArray(data.blocks?.planned) && (
+            <div>
+              <h2 className="mb-2 font-medium">Запланированные блоки</h2>
+              <Card>
+                <ul className="space-y-1.5 text-sm text-slate-400">
+                  {(data.blocks.planned as string[]).map((b) => (
+                    <li key={b}>· {b}</li>
+                  ))}
+                </ul>
+              </Card>
+            </div>
           )}
         </TabsContent>
 
