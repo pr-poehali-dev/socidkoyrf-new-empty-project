@@ -24,6 +24,31 @@ const Card = ({ children }: { children: React.ReactNode }) => (
   <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">{children}</div>
 );
 
+const List = ({
+  title,
+  items,
+  ordered,
+}: {
+  title: string;
+  items?: unknown;
+  ordered?: boolean;
+}) => {
+  if (!Array.isArray(items) || items.length === 0) return null;
+  return (
+    <div className="mt-3">
+      <h4 className="text-xs uppercase tracking-wide text-slate-500">{title}</h4>
+      <ul className="mt-1.5 space-y-1.5">
+        {(items as string[]).map((t, i) => (
+          <li key={i} className="text-sm leading-relaxed text-slate-400">
+            {ordered ? `${i + 1}. ` : '· '}
+            {t}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
 const Memory = () => {
   const [data, setData] = useState<Record<string, Section> | null>(null);
   const [titles, setTitles] = useState<Record<string, string>>({});
@@ -194,7 +219,23 @@ const Memory = () => {
           {((data.glossary?.items ?? []) as Item[]).map((item, i) => (
             <Card key={i}>
               <h3 className="font-medium">{String(item.term)}</h3>
-              <p className="mt-1 text-sm text-slate-400">{String(item.meaning)}</p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-400">
+                {String(item.meaning)}
+              </p>
+              <List title="Как используем" items={item.modes} ordered />
+              <List title="Что блоком не является" items={item.not_a_block} />
+              <List title="Подробнее" items={item.details} />
+              {item.note ? (
+                <p className="mt-2 text-sm text-slate-400">{String(item.note)}</p>
+              ) : null}
+              {item.status ? (
+                <p className="mt-2 text-xs text-slate-500">{String(item.status)}</p>
+              ) : null}
+              {item.rule ? (
+                <p className="mt-3 rounded-md border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-sm text-amber-200/90">
+                  Правило: {String(item.rule)}
+                </p>
+              ) : null}
             </Card>
           ))}
         </TabsContent>
