@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import OwnerLayout from '@/components/owner/OwnerLayout';
 import ConceptView from '@/components/owner/ConceptView';
+import BlocksProposal from '@/components/owner/BlocksProposal';
 import JournalInstruction from '@/components/owner/JournalInstruction';
 import JournalSession, { Session } from '@/components/owner/JournalSession';
 import { Entry } from '@/components/owner/JournalEntry';
@@ -201,7 +202,22 @@ const Memory = () => {
           ))}
         </TabsContent>
 
-        <TabsContent value="blocks" className="mt-4 space-y-5">
+        <TabsContent value="blocks" className="mt-4">
+          <Tabs defaultValue="real">
+            <TabsList className="mb-4 bg-slate-900">
+              <TabsTrigger value="real" className="data-[state=active]:bg-slate-800">
+                Что есть
+              </TabsTrigger>
+              <TabsTrigger value="proposal" className="data-[state=active]:bg-slate-800">
+                Замысел
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="proposal">
+              <BlocksProposal data={data.blocks?.proposal as never} />
+            </TabsContent>
+
+            <TabsContent value="real" className="space-y-5">
           {data.blocks?.description ? (
             <p className="text-sm text-slate-500">
               {String(data.blocks.description)}
@@ -265,6 +281,8 @@ const Memory = () => {
               </Card>
             </div>
           )}
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         <TabsContent value="glossary" className="mt-4 space-y-3">
