@@ -17,6 +17,7 @@ CORS = {
 }
 
 SECTIONS = {
+    'concept': 'Концепция',
     'journal': 'Журнал',
     'plans': 'Планы',
     'blocks': 'Блоки',

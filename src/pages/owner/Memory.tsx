@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import OwnerLayout from '@/components/owner/OwnerLayout';
+import ConceptView from '@/components/owner/ConceptView';
 import JournalInstruction from '@/components/owner/JournalInstruction';
 import JournalSession, { Session } from '@/components/owner/JournalSession';
 import { Entry } from '@/components/owner/JournalEntry';
@@ -122,12 +123,16 @@ const Memory = () => {
 
       <Tabs defaultValue="journal">
         <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 bg-slate-900">
-          {['journal', 'plans', 'blocks', 'glossary'].map((key) => (
+          {['concept', 'journal', 'plans', 'blocks', 'glossary'].map((key) => (
             <TabsTrigger key={key} value={key} className="data-[state=active]:bg-slate-800">
               {titles[key] ?? key}
             </TabsTrigger>
           ))}
         </TabsList>
+
+        <TabsContent value="concept" className="mt-4">
+          <ConceptView data={data.concept as never} />
+        </TabsContent>
 
         <TabsContent value="journal" className="mt-4">
           <JournalInstruction data={data.journal?.instruction as never} />
