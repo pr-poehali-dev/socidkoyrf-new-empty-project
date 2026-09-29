@@ -198,7 +198,12 @@ const Memory = () => {
 
         <TabsContent value="blocks" className="mt-4 space-y-5">
           {data.blocks?.description ? (
-            <p className="text-sm text-slate-500">{String(data.blocks.description)}</p>
+            <p className="text-sm text-slate-500">
+              {String(data.blocks.description)}
+              {data.blocks.checked
+                ? `. Сверено по коду ${new Date(String(data.blocks.checked)).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}`
+                : ''}
+            </p>
           ) : null}
 
           {((data.blocks?.groups ?? []) as Item[]).map((group, gi) => (
