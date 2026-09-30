@@ -5,17 +5,38 @@ type Item = Record<string, unknown>;
 
 const StageCard = ({ item, defaultOpen }: { item: Item; defaultOpen: boolean }) => {
   const [open, setOpen] = useState(defaultOpen);
+  const done = item.state === 'сделано';
+  const fact = (item.fact ?? []) as string[];
 
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900">
+    <div
+      className={`rounded-lg border bg-slate-900 ${
+        done ? 'border-emerald-500/30' : 'border-slate-800'
+      }`}
+    >
       <button
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-start gap-3 px-4 py-3 text-left"
       >
-        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs text-slate-300">
-          {String(item.num)}
+        <span
+          className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs ${
+            done ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-300'
+          }`}
+        >
+          {done ? <Icon name="Check" size={14} /> : String(item.num)}
         </span>
-        <h3 className="min-w-0 flex-1 font-medium leading-snug">{String(item.title)}</h3>
+        <div className="min-w-0 flex-1">
+          <h3 className="font-medium leading-snug">{String(item.title)}</h3>
+          <p className="text-xs text-slate-500">
+            {done ? 'Сделано' : 'Запланировано'}
+            {done && item.done_at
+              ? ` · ${new Date(String(item.done_at)).toLocaleDateString('ru-RU', {
+                  day: 'numeric',
+                  month: 'long',
+                })}`
+              : ''}
+          </p>
+        </div>
         <Icon
           name="ChevronDown"
           size={18}
@@ -36,6 +57,25 @@ const StageCard = ({ item, defaultOpen }: { item: Item; defaultOpen: boolean }) 
             <p className="mt-3 rounded-md border border-emerald-500/25 bg-emerald-500/5 px-3 py-2 text-sm leading-relaxed text-emerald-200/90">
               Результат: {String(item.result)}
             </p>
+          ) : null}
+          {fact.length > 0 ? (
+            <div className="mt-3 rounded-md border border-slate-800 bg-slate-950 p-3">
+              <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">
+                Что сделано по факту
+              </p>
+              <ul className="space-y-1.5">
+                {fact.map((f, i) => (
+                  <li key={i} className="flex gap-2 text-sm leading-relaxed text-slate-400">
+                    <Icon
+                      name="Check"
+                      size={14}
+                      className="mt-1 shrink-0 text-emerald-400/70"
+                    />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ) : null}
         </div>
       )}
@@ -71,7 +111,9 @@ const BlocksStages = ({ data }: { data?: Item }) => {
               <h2 className="font-medium leading-snug">{String(block.title)}</h2>
               <p className="text-xs text-slate-500">
                 {date}
-                {items.length ? ` · этапов: ${items.length}` : ''}
+                {items.length
+                  ? ` · сделано ${items.filter((x) => x.state === 'сделано').length} из ${items.length}`
+                  : ''}
               </p>
               {block.note ? (
                 <p className="mt-1 text-xs text-slate-500">{String(block.note)}</p>
