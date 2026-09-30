@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import OwnerLayout from '@/components/owner/OwnerLayout';
 import NomEditor from '@/components/owner/NomEditor';
 import { Button } from '@/components/ui/button';
@@ -66,10 +67,18 @@ const Nomenclature = () => {
               Справочник прародителей. Позиций: {total}
             </p>
           </div>
-          <Button className="h-10 shrink-0" onClick={() => setEditing('new')}>
-            <Icon name="Plus" size={18} className="mr-1" />
-            Позиция
-          </Button>
+          <div className="flex shrink-0 gap-2">
+            <Link to="/owner/nomenclature/upload">
+              <Button variant="secondary" className="h-10">
+                <Icon name="Upload" size={18} className="sm:mr-1" />
+                <span className="hidden sm:inline">Прайс</span>
+              </Button>
+            </Link>
+            <Button className="h-10" onClick={() => setEditing('new')}>
+              <Icon name="Plus" size={18} className="sm:mr-1" />
+              <span className="hidden sm:inline">Позиция</span>
+            </Button>
+          </div>
         </div>
 
         <Input
@@ -145,7 +154,7 @@ const Nomenclature = () => {
             <p className="text-sm text-slate-500">
               {search || groupId || brandId
                 ? 'Ничего не нашлось'
-                : 'Справочник пуст. Заведите первую позицию'}
+                : 'Справочник пуст. Заведите позицию руками или загрузите прайс'}
             </p>
           </div>
         ) : (

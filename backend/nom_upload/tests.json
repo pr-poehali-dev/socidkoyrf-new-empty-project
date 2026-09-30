@@ -1,0 +1,29 @@
+{
+  "tests": [
+    {
+      "name": "Health check",
+      "method": "GET",
+      "path": "/?action=health",
+      "expectedStatus": 200,
+      "expectedBody": { "status": "ok" },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "История закрыта без входа",
+      "method": "GET",
+      "path": "/?action=history",
+      "expectedStatus": 403,
+      "expectedBody": { "error": "forbidden" },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Разбор закрыт без входа",
+      "method": "POST",
+      "path": "/?action=analyze",
+      "body": { "rows": [] },
+      "expectedStatus": 403,
+      "expectedBody": { "error": "forbidden" },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
