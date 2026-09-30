@@ -17,6 +17,7 @@ import Vault from "./pages/Vault";
 import Memory from "./pages/owner/Memory";
 import OwnerLog from "./pages/owner/OwnerLog";
 import Waitlist from "./pages/owner/Waitlist";
+import Nomenclature from "./pages/owner/Nomenclature";
 import Stub from "./pages/owner/Stub";
 import NotFound from "./pages/NotFound";
 
@@ -90,6 +91,14 @@ const App = () => (
                         "Блокировка",
                       ]}
                     />
+                  </RequireOwner>
+                }
+              />
+              <Route
+                path="/owner/nomenclature"
+                element={
+                  <RequireOwner>
+                    <Nomenclature />
                   </RequireOwner>
                 }
               />

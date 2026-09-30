@@ -1,0 +1,28 @@
+{
+  "tests": [
+    {
+      "name": "Health check",
+      "method": "GET",
+      "path": "/?action=health",
+      "expectedStatus": 200,
+      "expectedBody": { "status": "ok" },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Номенклатура закрыта без входа",
+      "method": "GET",
+      "path": "/?action=list",
+      "expectedStatus": 403,
+      "expectedBody": { "error": "forbidden" },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Карточка закрыта без входа",
+      "method": "GET",
+      "path": "/?action=item&id=1",
+      "expectedStatus": 403,
+      "expectedBody": { "error": "forbidden" },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

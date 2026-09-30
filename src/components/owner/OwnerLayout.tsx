@@ -9,6 +9,7 @@ const menu = [
   { to: '/owner/memory', label: 'Память', icon: 'BrainCircuit' },
   { to: '/owner/waitlist', label: 'Список ожидания', icon: 'Bell' },
   { to: '/owner/users', label: 'Пользователи', icon: 'Users' },
+  { to: '/owner/nomenclature', label: 'Номенклатура', icon: 'Library' },
   { to: '/owner/products', label: 'Товары', icon: 'Package' },
   { to: '/owner/log', label: 'Журнал', icon: 'ScrollText' },
   { to: '/owner/settings', label: 'Настройки', icon: 'Settings' },
