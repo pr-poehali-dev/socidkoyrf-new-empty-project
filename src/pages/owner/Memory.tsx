@@ -7,6 +7,7 @@ import Icon from '@/components/ui/icon';
 import OwnerLayout from '@/components/owner/OwnerLayout';
 import ConceptView from '@/components/owner/ConceptView';
 import BlocksProposal from '@/components/owner/BlocksProposal';
+import BlocksStages from '@/components/owner/BlocksStages';
 import JournalInstruction from '@/components/owner/JournalInstruction';
 import JournalSession, { Session } from '@/components/owner/JournalSession';
 import { Entry } from '@/components/owner/JournalEntry';
@@ -204,14 +205,21 @@ const Memory = () => {
 
         <TabsContent value="blocks" className="mt-4">
           <Tabs defaultValue="real">
-            <TabsList className="mb-4 bg-slate-900">
+            <TabsList className="mb-4 flex h-auto w-full flex-wrap justify-start gap-1 bg-slate-900">
               <TabsTrigger value="real" className="data-[state=active]:bg-slate-800">
                 Что есть
               </TabsTrigger>
               <TabsTrigger value="proposal" className="data-[state=active]:bg-slate-800">
                 Замысел
               </TabsTrigger>
+              <TabsTrigger value="stages" className="data-[state=active]:bg-slate-800">
+                Этапы
+              </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="stages">
+              <BlocksStages data={data.blocks?.stages as never} />
+            </TabsContent>
 
             <TabsContent value="proposal">
               <BlocksProposal data={data.blocks?.proposal as never} />

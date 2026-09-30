@@ -6,6 +6,7 @@ import psycopg2
 from psycopg2.extensions import adapt
 
 from content import CONTENT
+from stages import STAGES
 
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 'public')
 
@@ -119,7 +120,11 @@ def owner_log(conn, user_id, action, target, details, ip, ua):
 
 
 def read_section(name):
-    return CONTENT.get(name) or {'title': SECTIONS.get(name, name), 'items': []}
+    section = CONTENT.get(name) or {'title': SECTIONS.get(name, name), 'items': []}
+    if name == 'blocks':
+        section = dict(section)
+        section['stages'] = STAGES
+    return section
 
 
 def handler(event: dict, context) -> dict:
