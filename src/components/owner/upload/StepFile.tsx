@@ -1,13 +1,9 @@
 import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Icon from '@/components/ui/icon';
 
 type Props = {
-  supplier: string;
-  setSupplier: (v: string) => void;
-  suppliers: { id: number; name: string }[];
   fileName: string;
   headerRow: string[];
   sample: string[][];
@@ -17,9 +13,6 @@ type Props = {
 };
 
 const StepFile = ({
-  supplier,
-  setSupplier,
-  suppliers,
   fileName,
   headerRow,
   sample,
@@ -31,22 +24,6 @@ const StepFile = ({
 
   return (
     <div className="space-y-4">
-      <div>
-        <Label className="text-slate-400">Поставщик</Label>
-        <Input
-          list="upload-suppliers"
-          value={supplier}
-          onChange={(e) => setSupplier(e.target.value)}
-          placeholder="Название поставщика"
-          className="mt-1 h-11 border-slate-800 bg-slate-900"
-        />
-        <datalist id="upload-suppliers">
-          {suppliers.map((s) => (
-            <option key={s.id} value={s.name} />
-          ))}
-        </datalist>
-      </div>
-
       <div>
         <Label className="text-slate-400">Файл прайса</Label>
         <input

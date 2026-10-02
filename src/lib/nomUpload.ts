@@ -36,7 +36,6 @@ export type ParsedRow = {
 
 export type UploadHistory = {
   id: number;
-  supplier: string | null;
   file_name: string | null;
   rows_total: number;
   created: number;
@@ -64,12 +63,6 @@ const post = async (action: string, body: unknown) => {
   return data;
 };
 
-export async function fetchSuppliers(): Promise<{ id: number; name: string }[]> {
-  const res = await fetch(`${URL}?action=suppliers`, { headers: headers() });
-  if (!res.ok) return [];
-  return (await res.json()).suppliers ?? [];
-}
-
 export async function fetchUploadHistory(): Promise<UploadHistory[]> {
   const res = await fetch(`${URL}?action=history`, { headers: headers() });
   if (!res.ok) return [];
@@ -86,7 +79,6 @@ export async function analyzeRows(
 }
 
 export async function startUpload(body: {
-  supplier: string;
   file_name: string;
   rows_total: number;
   mapping: Record<string, string>;
@@ -97,7 +89,6 @@ export async function startUpload(body: {
 
 export async function commitRows(body: {
   upload_id: number;
-  supplier: string;
   rows: ParsedRow[];
 }): Promise<{ created: number; updated: number; skipped: number }> {
   return post('commit', body);

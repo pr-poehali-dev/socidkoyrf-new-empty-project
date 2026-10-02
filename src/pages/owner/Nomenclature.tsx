@@ -189,6 +189,15 @@ const Nomenclature = () => {
             {loading ? 'Загружаю…' : 'Показать ещё'}
           </Button>
         )}
+
+        <div className="sticky bottom-0 -mx-4 border-t border-slate-800 bg-slate-950/95 px-4 py-3 backdrop-blur lg:-mx-6 lg:px-6">
+          <Link to="/owner/nomenclature/brands">
+            <Button variant="secondary" className="h-11 w-full">
+              <Icon name="Tags" size={18} className="mr-2" />
+              Бренды
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <NomEditor

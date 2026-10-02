@@ -241,13 +241,6 @@ def find_match(conn, article_norm, group, brand, model):
             row = cur.fetchone()
             if row:
                 return row[0], 'совпадение'
-            cur.execute(
-                f"SELECT nomenclature_id FROM {SCHEMA}.nomenclature_supplier_articles "
-                f"WHERE article_norm = {q(article_norm)} LIMIT 1"
-            )
-            row = cur.fetchone()
-            if row:
-                return row[0], 'совпадение'
         if brand and model:
             cur.execute(
                 f"SELECT n.id FROM {SCHEMA}.nomenclature n "
@@ -336,13 +329,11 @@ def ref_id(cur, table, name):
 
 
 def start_upload(conn, user_id, body):
-    supplier = clean(body.get('supplier'))
     with conn.cursor() as cur:
-        sid = ref_id(cur, 'nom_suppliers', supplier) if supplier else None
         cur.execute(
             f"INSERT INTO {SCHEMA}.nom_uploads "
-            f"(supplier_id, supplier_name, file_name, rows_total, mapping, created_by) "
-            f"VALUES ({q(sid)}, {q(supplier or None)}, {q(clean(body.get('file_name')) or None)}, "
+            f"(file_name, rows_total, mapping, created_by) "
+            f"VALUES ({q(clean(body.get('file_name')) or None)}, "
             f"{q(int(body.get('rows_total') or 0))}, {q(json.dumps(body.get('mapping') or {}, ensure_ascii=False))}, "
             f"{q(user_id)}) RETURNING id"
         )
@@ -353,7 +344,6 @@ def start_upload(conn, user_id, body):
 
 def commit_rows(conn, user_id, body):
     upload_id = int(body.get('upload_id') or 0)
-    supplier = clean(body.get('supplier'))
     rows = body.get('rows') or []
     created = updated = skipped = 0
 
@@ -361,21 +351,13 @@ def commit_rows(conn, user_id, body):
         for r in rows:
             if r.get('skip'):
                 skipped += 1
-                cur.execute(
-                    f"INSERT INTO {SCHEMA}.nom_upload_rows "
-                    f"(upload_id, row_num, raw_name, raw_article, verdict, problem) VALUES "
-                    f"({q(upload_id)}, {q(r.get('row'))}, {q(r.get('raw_name'))}, {q(r.get('article'))}, "
-                    f"'пропущено', {q('; '.join(r.get('problems') or []) or None)})"
-                )
                 continue
 
-            article = r.get('article')
-            art_norm = norm_article(article)
             nom_id = r.get('match_id')
-
             if nom_id:
                 updated += 1
             else:
+                article = r.get('article')
                 gid = ref_id(cur, 'nom_groups', r.get('group'))
                 bid = ref_id(cur, 'nom_brands', r.get('brand'))
                 weight = r.get('weight')
@@ -383,10 +365,8 @@ def commit_rows(conn, user_id, body):
                 cur.execute(
                     f"INSERT INTO {SCHEMA}.nomenclature "
                     f"(group_id, brand_id, model, article, article_norm, weight, volume, created_by, upload_id) "
-                    f"VALUES ({q(gid)}, {q(bid)}, {q(r.get('model'))}, {q(article)}, {q(art_norm)}, "
-                    f"{q(float(weight) if weight not in (None, '') else None)}, "
-                    f"{q(float(volume) if volume not in (None, '') else None)}, "
-                    f"{q(user_id)}, {q(upload_id)}) RETURNING id"
+                    f"VALUES ({q(gid)}, {q(bid)}, {q(r.get('model'))}, {q(article)}, {q(norm_article(article))}, "
+                    f"{q(to_num(weight))}, {q(to_num(volume))}, {q(user_id)}, {q(upload_id)}) RETURNING id"
                 )
                 nom_id = cur.fetchone()[0]
                 created += 1
@@ -399,39 +379,6 @@ def commit_rows(conn, user_id, body):
                         f"VALUES ({q(nom_id)}, {q(fid)}) ON CONFLICT DO NOTHING"
                     )
 
-            if r.get('name'):
-                cur.execute(
-                    f"SELECT 1 FROM {SCHEMA}.nomenclature_supplier_names "
-                    f"WHERE nomenclature_id = {q(nom_id)} AND lower(name) = lower({q(r.get('name'))}) "
-                    f"AND coalesce(lower(supplier_name),'') = coalesce(lower({q(supplier or None)}),'')"
-                )
-                if not cur.fetchone():
-                    cur.execute(
-                        f"INSERT INTO {SCHEMA}.nomenclature_supplier_names "
-                        f"(nomenclature_id, supplier_name, name) "
-                        f"VALUES ({q(nom_id)}, {q(supplier or None)}, {q(r.get('name'))})"
-                    )
-
-            if article:
-                cur.execute(
-                    f"SELECT 1 FROM {SCHEMA}.nomenclature_supplier_articles "
-                    f"WHERE nomenclature_id = {q(nom_id)} AND article_norm = {q(art_norm)} "
-                    f"AND coalesce(lower(supplier_name),'') = coalesce(lower({q(supplier or None)}),'')"
-                )
-                if not cur.fetchone():
-                    cur.execute(
-                        f"INSERT INTO {SCHEMA}.nomenclature_supplier_articles "
-                        f"(nomenclature_id, supplier_name, article, article_norm) "
-                        f"VALUES ({q(nom_id)}, {q(supplier or None)}, {q(article)}, {q(art_norm)})"
-                    )
-
-            cur.execute(
-                f"INSERT INTO {SCHEMA}.nom_upload_rows "
-                f"(upload_id, row_num, raw_name, raw_article, verdict, nomenclature_id) VALUES "
-                f"({q(upload_id)}, {q(r.get('row'))}, {q(r.get('raw_name'))}, {q(article)}, "
-                f"{q(r.get('verdict'))}, {q(nom_id)})"
-            )
-
         cur.execute(
             f"UPDATE {SCHEMA}.nom_uploads SET created_new = created_new + {created}, "
             f"updated_existing = updated_existing + {updated}, skipped = skipped + {skipped} "
@@ -439,6 +386,15 @@ def commit_rows(conn, user_id, body):
         )
     conn.commit()
     return {'created': created, 'updated': updated, 'skipped': skipped}
+
+
+def to_num(value):
+    if value in (None, ''):
+        return None
+    try:
+        return float(str(value).replace(',', '.').replace(' ', ''))
+    except ValueError:
+        return None
 
 
 def finish_upload(conn, upload_id):
@@ -458,24 +414,18 @@ def finish_upload(conn, upload_id):
 def history(conn):
     with conn.cursor() as cur:
         cur.execute(
-            f"SELECT id, supplier_name, file_name, rows_total, created_new, updated_existing, "
+            f"SELECT id, file_name, rows_total, created_new, updated_existing, "
             f"skipped, status, created_at FROM {SCHEMA}.nom_uploads "
             f"ORDER BY created_at DESC LIMIT 50"
         )
         return [
             {
-                'id': r[0], 'supplier': r[1], 'file_name': r[2], 'rows_total': r[3],
-                'created': r[4], 'updated': r[5], 'skipped': r[6],
-                'status': r[7], 'created_at': r[8],
+                'id': r[0], 'file_name': r[1], 'rows_total': r[2],
+                'created': r[3], 'updated': r[4], 'skipped': r[5],
+                'status': r[6], 'created_at': r[7],
             }
             for r in cur.fetchall()
         ]
-
-
-def suppliers(conn):
-    with conn.cursor() as cur:
-        cur.execute(f"SELECT id, name FROM {SCHEMA}.nom_suppliers ORDER BY name")
-        return [{'id': r[0], 'name': r[1]} for r in cur.fetchall()]
 
 
 def handler(event: dict, context) -> dict:
@@ -499,9 +449,6 @@ def handler(event: dict, context) -> dict:
         ip = client_ip(event)
         ua = user_agent(event)
         body = json.loads(event.get('body') or '{}') if method == 'POST' else {}
-
-        if action == 'suppliers':
-            return respond(200, {'suppliers': suppliers(conn)})
 
         if action == 'history':
             return respond(200, {'uploads': history(conn)})

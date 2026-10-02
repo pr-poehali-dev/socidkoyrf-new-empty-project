@@ -149,9 +149,7 @@ def list_items(conn, params):
         like = q('%' + search.lower() + '%')
         where.append(
             f"(lower(coalesce(n.model,'')) LIKE {like} OR lower(coalesce(n.article,'')) LIKE {like} "
-            f"OR lower(coalesce(b.name,'')) LIKE {like} OR lower(coalesce(g.name,'')) LIKE {like} "
-            f"OR EXISTS (SELECT 1 FROM {SCHEMA}.nomenclature_supplier_names sn "
-            f"WHERE sn.nomenclature_id = n.id AND lower(sn.name) LIKE {like}))"
+            f"OR lower(coalesce(b.name,'')) LIKE {like} OR lower(coalesce(g.name,'')) LIKE {like})"
         )
     if group_id:
         where.append(f"n.group_id = {q(int(group_id))}")
@@ -214,21 +212,16 @@ def get_item(conn, item_id):
         )
         item['features'] = [{'id': x[0], 'name': x[1]} for x in cur.fetchall()]
 
-        cur.execute(
-            f"SELECT id, supplier_name, name, created_at FROM {SCHEMA}.nomenclature_supplier_names "
-            f"WHERE nomenclature_id = {q(int(item_id))} ORDER BY id"
-        )
-        item['supplier_names'] = [
-            {'id': x[0], 'supplier': x[1], 'name': x[2], 'created_at': x[3]} for x in cur.fetchall()
-        ]
-
-        cur.execute(
-            f"SELECT id, supplier_name, article FROM {SCHEMA}.nomenclature_supplier_articles "
-            f"WHERE nomenclature_id = {q(int(item_id))} ORDER BY id"
-        )
-        item['supplier_articles'] = [
-            {'id': x[0], 'supplier': x[1], 'article': x[2]} for x in cur.fetchall()
-        ]
+        item['manufacturer'] = None
+        if item['brand_id']:
+            cur.execute(
+                f"SELECT m.name, m.inn FROM {SCHEMA}.nom_brands b "
+                f"JOIN {SCHEMA}.nom_manufacturers m ON m.id = b.manufacturer_id "
+                f"WHERE b.id = {q(int(item['brand_id']))}"
+            )
+            m = cur.fetchone()
+            if m:
+                item['manufacturer'] = {'name': m[0], 'inn': m[1]}
     return item
 
 
@@ -277,17 +270,111 @@ def save_item(conn, user_id, body):
                     f"INSERT INTO {SCHEMA}.nomenclature_features (nomenclature_id, feature_id) "
                     f"VALUES ({q(int(item_id))}, {q(fid)}) ON CONFLICT DO NOTHING"
                 )
-
-        supplier_name = (body.get('supplier_name') or '').strip()
-        source_name = (body.get('source_name') or '').strip()
-        if source_name:
-            cur.execute(
-                f"INSERT INTO {SCHEMA}.nomenclature_supplier_names "
-                f"(nomenclature_id, supplier_name, name) "
-                f"VALUES ({q(int(item_id))}, {q(supplier_name or None)}, {q(source_name)})"
-            )
     conn.commit()
     return item_id
+
+
+INN_W10 = (2, 4, 10, 3, 5, 9, 4, 6, 8)
+INN_W12_1 = (7, 2, 4, 10, 3, 5, 9, 4, 6, 8)
+INN_W12_2 = (3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8)
+
+
+def inn_ok(inn):
+    if not inn.isdigit():
+        return False
+    d = [int(c) for c in inn]
+    check = lambda w: sum(a * b for a, b in zip(w, d)) % 11 % 10
+    if len(d) == 10:
+        return check(INN_W10) == d[9]
+    if len(d) == 12:
+        return check(INN_W12_1) == d[10] and check(INN_W12_2) == d[11]
+    return False
+
+
+def list_brands(conn, params):
+    search = (params.get('search') or '').strip().lower()
+    cond = '1=1'
+    if search:
+        like = q('%' + search + '%')
+        cond = (
+            f"(lower(b.name) LIKE {like} OR lower(coalesce(m.name,'')) LIKE {like} "
+            f"OR coalesce(m.inn,'') LIKE {like})"
+        )
+    with conn.cursor() as cur:
+        cur.execute(
+            f"SELECT b.id, b.name, m.id, m.name, m.inn, "
+            f"(SELECT count(*) FROM {SCHEMA}.nomenclature n WHERE n.brand_id = b.id) "
+            f"FROM {SCHEMA}.nom_brands b "
+            f"LEFT JOIN {SCHEMA}.nom_manufacturers m ON m.id = b.manufacturer_id "
+            f"WHERE {cond} ORDER BY lower(b.name)"
+        )
+        brands = [
+            {
+                'id': r[0], 'name': r[1],
+                'manufacturer': {'id': r[2], 'name': r[3], 'inn': r[4]} if r[2] else None,
+                'count': r[5],
+            }
+            for r in cur.fetchall()
+        ]
+        cur.execute(f"SELECT id, name, inn FROM {SCHEMA}.nom_manufacturers ORDER BY lower(name)")
+        manufacturers = [{'id': r[0], 'name': r[1], 'inn': r[2]} for r in cur.fetchall()]
+    return {'brands': brands, 'manufacturers': manufacturers}
+
+
+def save_brand(conn, body):
+    """Сохраняет бренд и его производителя. Возвращает (id, ошибка)."""
+    brand_id = body.get('id')
+    name = (body.get('name') or '').strip()
+    if not name:
+        return None, 'Название бренда обязательно'
+
+    man_id = body.get('manufacturer_id')
+    new_man = body.get('new_manufacturer') or None
+
+    with conn.cursor() as cur:
+        cur.execute(
+            f"SELECT id FROM {SCHEMA}.nom_brands WHERE lower(name) = lower({q(name)})"
+            + (f" AND id <> {q(int(brand_id))}" if brand_id else '')
+        )
+        if cur.fetchone():
+            return None, 'Такой бренд уже есть'
+
+        if new_man:
+            m_name = (new_man.get('name') or '').strip()
+            m_inn = ''.join(ch for ch in (new_man.get('inn') or '') if ch.isdigit()) or None
+            if not m_name:
+                return None, 'Наименование производителя обязательно'
+            if m_inn:
+                if not inn_ok(m_inn):
+                    return None, 'ИНН не прошёл проверку'
+                cur.execute(f"SELECT name FROM {SCHEMA}.nom_manufacturers WHERE inn = {q(m_inn)}")
+                dup = cur.fetchone()
+                if dup:
+                    return None, f'Этот ИНН уже у производителя «{dup[0]}»'
+            cur.execute(
+                f"INSERT INTO {SCHEMA}.nom_manufacturers (name, inn) "
+                f"VALUES ({q(m_name)}, {q(m_inn)}) RETURNING id"
+            )
+            man_id = cur.fetchone()[0]
+
+        man_val = int(man_id) if man_id else None
+        if brand_id:
+            cur.execute(
+                f"UPDATE {SCHEMA}.nom_brands SET name = {q(name)}, manufacturer_id = {q(man_val)} "
+                f"WHERE id = {q(int(brand_id))} RETURNING id"
+            )
+            row = cur.fetchone()
+            if not row:
+                return None, 'Бренд не найден'
+            brand_id = row[0]
+        else:
+            cur.execute(
+                f"INSERT INTO {SCHEMA}.nom_brands (name, manufacturer_id) "
+                f"VALUES ({q(name)}, {q(man_val)}) RETURNING id"
+            )
+            brand_id = cur.fetchone()[0]
+    conn.commit()
+    return brand_id, None
 
 
 def handler(event: dict, context) -> dict:
@@ -332,6 +419,20 @@ def handler(event: dict, context) -> dict:
                 'Сохранена позиция номенклатуры', ip, ua,
             )
             return respond(200, {'id': item_id, 'item': get_item(conn, item_id)})
+
+        if action == 'brands':
+            return respond(200, list_brands(conn, params))
+
+        if action == 'brand_save' and method == 'POST':
+            body = json.loads(event.get('body') or '{}')
+            brand_id, err = save_brand(conn, body)
+            if err:
+                return respond(400, {'error': err})
+            owner_log(
+                conn, user_id, 'brand_save', str(brand_id),
+                'Сохранён бренд и его производитель', ip, ua,
+            )
+            return respond(200, {'id': brand_id})
 
         return respond(404, {'error': 'unknown_action'})
     finally:

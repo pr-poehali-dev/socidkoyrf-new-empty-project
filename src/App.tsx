@@ -19,6 +19,7 @@ import OwnerLog from "./pages/owner/OwnerLog";
 import Waitlist from "./pages/owner/Waitlist";
 import Nomenclature from "./pages/owner/Nomenclature";
 import NomUpload from "./pages/owner/NomUpload";
+import Brands from "./pages/owner/Brands";
 import Stub from "./pages/owner/Stub";
 import NotFound from "./pages/NotFound";
 
@@ -100,6 +101,14 @@ const App = () => (
                 element={
                   <RequireOwner>
                     <Nomenclature />
+                  </RequireOwner>
+                }
+              />
+              <Route
+                path="/owner/nomenclature/brands"
+                element={
+                  <RequireOwner>
+                    <Brands />
                   </RequireOwner>
                 }
               />

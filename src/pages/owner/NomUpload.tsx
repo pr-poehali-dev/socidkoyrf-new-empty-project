@@ -10,7 +10,6 @@ import Icon from '@/components/ui/icon';
 import {
   analyzeRows,
   commitRows,
-  fetchSuppliers,
   fetchUploadHistory,
   finishUpload,
   startUpload,
@@ -50,8 +49,6 @@ const guess = (header: string[]): Mapping => {
 
 const NomUpload = () => {
   const [step, setStep] = useState(0);
-  const [supplier, setSupplier] = useState('');
-  const [suppliers, setSuppliers] = useState<{ id: number; name: string }[]>([]);
   const [fileName, setFileName] = useState('');
   const [header, setHeader] = useState<string[]>([]);
   const [allRows, setAllRows] = useState<string[][]>([]);
@@ -69,7 +66,6 @@ const NomUpload = () => {
   const [history, setHistory] = useState<UploadHistory[]>([]);
 
   useEffect(() => {
-    fetchSuppliers().then(setSuppliers);
     fetchUploadHistory().then(setHistory);
   }, []);
 
@@ -133,7 +129,6 @@ const NomUpload = () => {
     setError('');
     try {
       const uploadId = await startUpload({
-        supplier,
         file_name: fileName,
         rows_total: parsed.length,
         mapping: mapping as unknown as Record<string, string>,
@@ -142,7 +137,6 @@ const NomUpload = () => {
       for (let i = 0; i < parsed.length; i += 100) {
         const part = await commitRows({
           upload_id: uploadId,
-          supplier,
           rows: parsed.slice(i, i + 100),
         });
         total.created += part.created;
@@ -153,7 +147,6 @@ const NomUpload = () => {
       setResult(total);
       setStep(4);
       fetchUploadHistory().then(setHistory);
-      fetchSuppliers().then(setSuppliers);
     } catch {
       setError('Не удалось записать');
     } finally {
@@ -173,7 +166,7 @@ const NomUpload = () => {
   };
 
   const canNext =
-    (step === 0 && header.length > 0 && supplier.trim() !== '') ||
+    (step === 0 && header.length > 0) ||
     (step === 1 && mapping.name !== '') ||
     step === 2 ||
     (step === 3 && parsed.some((r) => !r.skip));
@@ -210,9 +203,6 @@ const NomUpload = () => {
 
         {step === 0 && (
           <StepFile
-            supplier={supplier}
-            setSupplier={setSupplier}
-            suppliers={suppliers}
             fileName={fileName}
             headerRow={header}
             sample={allRows.slice(0, 5)}
@@ -316,7 +306,6 @@ const NomUpload = () => {
                 >
                   <p className="truncate text-sm">
                     {h.file_name || 'Без имени'}
-                    {h.supplier ? ` · ${h.supplier}` : ''}
                   </p>
                   <p className="text-xs text-slate-500">
                     {new Date(h.created_at).toLocaleString('ru-RU', {

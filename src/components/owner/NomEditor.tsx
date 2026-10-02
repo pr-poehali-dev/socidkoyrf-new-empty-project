@@ -229,31 +229,23 @@ const NomEditor = ({ id, refs, onClose, onSaved }: Props) => {
               )}
             </div>
 
-            {item && item.supplier_names.length > 0 && (
+            {item && (
               <div className="rounded-lg border border-slate-800 bg-slate-900 p-3">
-                <p className="mb-2 text-xs text-slate-500">Наименования поставщиков</p>
-                <ul className="space-y-1 text-sm text-slate-400">
-                  {item.supplier_names.map((s) => (
-                    <li key={s.id}>
-                      {s.name}
-                      {s.supplier ? ` · ${s.supplier}` : ''}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {item && item.supplier_articles.length > 0 && (
-              <div className="rounded-lg border border-slate-800 bg-slate-900 p-3">
-                <p className="mb-2 text-xs text-slate-500">Артикулы поставщиков</p>
-                <ul className="space-y-1 text-sm text-slate-400">
-                  {item.supplier_articles.map((s) => (
-                    <li key={s.id}>
-                      {s.article}
-                      {s.supplier ? ` · ${s.supplier}` : ''}
-                    </li>
-                  ))}
-                </ul>
+                {item.manufacturer ? (
+                  <dl className="space-y-2 text-sm">
+                    <div>
+                      <dt className="text-xs text-slate-500">Наименование производителя</dt>
+                      <dd className="text-slate-300">{item.manufacturer.name}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-slate-500">ИНН производителя</dt>
+                      <dd className="text-slate-300">{item.manufacturer.inn || '—'}</dd>
+                    </div>
+                  </dl>
+                ) : (
+                  <p className="text-sm text-slate-500">Производитель не указан</p>
+                )}
+                <p className="mt-2 text-xs text-slate-600">Задаётся у бренда на странице «Бренды»</p>
               </div>
             )}
 
